@@ -1,0 +1,26 @@
+{
+  "name": "sistema-cadastro-roupas",
+  "version": "1.0.0",
+  "description": "Sistema web moderno para cadastrar roupas com integração Google Sheets e Drive",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": [
+    "roupas",
+    "cadastro",
+    "google-sheets",
+    "google-drive",
+    "javascript",
+    "html",
+    "css"
+  ],
+  "author": "MUAMUAMED",
+  "license": "MIT",
+  "homepage": "https://github.com/MUAMUAMED/sistema-cadastro-roupas#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MUAMUAMED/sistema-cadastro-roupas.git"
+  }
+} 

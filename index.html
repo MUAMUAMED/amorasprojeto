@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro de Roupas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <i class="fas fa-tshirt"></i>
+            <h1>Sistema de Cadastro de Roupas</h1>
+            <p>Gerencie seu estoque de forma simples e eficiente</p>
+        </header>
+
+        <div class="form-container">
+            <form id="cadastroForm" class="form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nome">
+                            <i class="fas fa-tag"></i>
+                            Nome da Roupa
+                        </label>
+                        <input type="text" id="nome" name="nome" placeholder="Ex: Camiseta Básica" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoria">
+                            <i class="fas fa-list"></i>
+                            Categoria
+                        </label>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Selecione uma categoria</option>
+                            <option value="Camiseta">Camiseta</option>
+                            <option value="Calça">Calça</option>
+                            <option value="Vestido">Vestido</option>
+                            <option value="Blusa">Blusa</option>
+                            <option value="Saia">Saia</option>
+                            <option value="Shorts">Shorts</option>
+                            <option value="Jaqueta">Jaqueta</option>
+                            <option value="Acessório">Acessório</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="estampa">
+                            <i class="fas fa-palette"></i>
+                            Estampa
+                        </label>
+                        <input type="text" id="estampa" name="estampa" placeholder="Ex: Floral, Geométrica, Lisa" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tamanho">
+                            <i class="fas fa-ruler"></i>
+                            Tamanho
+                        </label>
+                        <select id="tamanho" name="tamanho" required>
+                            <option value="">Selecione o tamanho</option>
+                            <option value="PP">PP</option>
+                            <option value="P">P</option>
+                            <option value="M">M</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                            <option value="XGG">XGG</option>
+                            <option value="Único">Tamanho Único</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantidade">
+                            <i class="fas fa-boxes"></i>
+                            Quantidade em Estoque
+                        </label>
+                        <input type="number" id="quantidade" name="quantidade" min="0" placeholder="Ex: 5" required>
+                    </div>
+
+                    <div class="form-group foto-group">
+                        <label for="foto">
+                            <i class="fas fa-camera"></i>
+                            Foto da Roupa
+                        </label>
+                        <div class="file-input-container">
+                            <input type="file" id="foto" name="foto" accept="image/*" required>
+                            <div class="file-input-display">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span id="file-name">Clique para selecionar uma foto</span>
+                            </div>
+                        </div>
+                        <div id="preview-container" class="preview-container" style="display: none;">
+                            <img id="preview-image" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-cadastrar" id="btnCadastrar">
+                        <i class="fas fa-plus-circle"></i>
+                        Cadastrar Roupa
+                    </button>
+                    <button type="button" class="btn-limpar" id="btnLimpar">
+                        <i class="fas fa-eraser"></i>
+                        Limpar Formulário
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="mensagem" class="mensagem" style="display: none;"></div>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Cadastrando roupa...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

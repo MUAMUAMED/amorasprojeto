@@ -1,0 +1,47 @@
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Arquivos de configuração local
+.env
+.env.local
+
+# Cache
+.cache/
+node_modules/
+
+# Arquivos específicos do Google Apps Script
+# (mantemos apenas as versões principais)
+google-apps-script-teste.gs
+google-apps-script-autorizado.gs
+google-apps-script-configurado.gs
+google-apps-script-corrigido.gs
+google-apps-script-simplificado.gs
+
+# Manter apenas as versões principais
+# google-apps-script.gs (versão principal)
+# google-apps-script-legacy.gs (versão legacy)
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Sistema Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Outros
+*.bak
+*.orig
+
+# Vercel
+.vercel 
