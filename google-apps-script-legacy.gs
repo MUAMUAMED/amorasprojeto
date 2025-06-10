@@ -139,39 +139,81 @@ function testarSistema() {
 function doPost(e) {
   try {
     console.log('📨 Requisição recebida');
+    console.log('🔍 Verificando estrutura da requisição...');
     
-    // Verificar dados
-    if (!e || !e.postData) {
-      console.log('❌ Nenhum dado recebido');
-      return criarResposta({
-        success: false,
-        error: 'Nenhum dado foi enviado'
-      });
+    let dados;
+    
+    // Tentativa 1: Dados JSON no postData
+    if (e && e.postData && e.postData.contents) {
+      try {
+        dados = JSON.parse(e.postData.contents);
+        console.log('✅ Dados JSON recebidos:', dados.nome || 'sem nome', dados.categoria || 'sem categoria');
+      } catch (parseError) {
+        console.log('⚠️ Erro ao interpretar JSON:', parseError.message);
+        console.log('📄 Conteúdo recebido:', e.postData.contents.substring(0, 200) + '...');
+      }
     }
     
-    // Parse JSON
-    let dados;
-    try {
-      dados = JSON.parse(e.postData.contents);
-      console.log('📦 Dados recebidos:', dados.nome, dados.categoria);
-    } catch (parseError) {
-      console.log('❌ Erro ao interpretar JSON:', parseError.message);
+    // Tentativa 2: Dados em parameters (FormData)
+    if (!dados && e && e.parameter) {
+      console.log('🔄 Tentando ler como FormData...');
+      dados = {
+        nome: e.parameter.nome,
+        categoria: e.parameter.categoria,
+        estampa: e.parameter.estampa,
+        tamanho: e.parameter.tamanho,
+        quantidade: parseInt(e.parameter.quantidade) || 0,
+        foto: {
+          name: e.parameter.foto_name,
+          type: e.parameter.foto_type,
+          data: e.parameter.foto_data
+        },
+        timestamp: e.parameter.timestamp || new Date().toISOString()
+      };
+      console.log('✅ Dados FormData convertidos:', dados.nome, dados.categoria);
+    }
+    
+    // Se ainda não temos dados
+    if (!dados) {
+      console.log('❌ Nenhum dado foi identificado');
+      console.log('🔍 Estrutura da requisição:', JSON.stringify(e, null, 2));
       return criarResposta({
         success: false,
-        error: 'Dados inválidos: ' + parseError.message
+        error: 'Nenhum dado foi enviado ou formato inválido'
       });
     }
     
     // Validar campos obrigatórios
-    const camposObrigatorios = ['nome', 'categoria', 'estampa', 'tamanho', 'quantidade', 'foto'];
+    const camposObrigatorios = ['nome', 'categoria', 'estampa', 'tamanho', 'quantidade'];
     for (const campo of camposObrigatorios) {
       if (!dados[campo]) {
+        console.log(`❌ Campo obrigatório ausente: ${campo}`);
         return criarResposta({
           success: false,
           error: `Campo obrigatório: ${campo}`
         });
       }
     }
+    
+    // Validar dados da foto
+    console.log('🔍 Validando dados da foto...');
+    if (!dados.foto) {
+      console.log('❌ Dados da foto ausentes');
+      return criarResposta({
+        success: false,
+        error: 'Foto é obrigatória'
+      });
+    }
+    
+    if (!dados.foto.data) {
+      console.log('❌ Dados base64 da foto ausentes');
+      return criarResposta({
+        success: false,
+        error: 'Dados da foto inválidos (sem base64)'
+      });
+    }
+    
+    console.log('✅ Validação da foto OK');
     
     // Upload da foto
     console.log('📸 Fazendo upload da foto...');
@@ -214,34 +256,82 @@ function doPost(e) {
  */
 function uploadFotoBasico(dadosFoto) {
   try {
+    console.log('📸 Iniciando upload da foto...');
+    
+    // Validar se os dados da foto existem
+    if (!dadosFoto) {
+      throw new Error('Dados da foto não fornecidos');
+    }
+    
+    console.log('🔍 Verificando estrutura da foto...');
+    console.log('📄 Propriedades disponíveis:', Object.keys(dadosFoto));
+    
+    if (!dadosFoto.data) {
+      throw new Error('Dados base64 da foto não encontrados (propriedade "data" ausente)');
+    }
+    
+    if (!dadosFoto.type) {
+      console.log('⚠️ Tipo da foto não especificado, assumindo image/jpeg');
+      dadosFoto.type = 'image/jpeg';
+    }
+    
+    if (!dadosFoto.name) {
+      console.log('⚠️ Nome da foto não especificado, gerando nome automático');
+      const timestamp = new Date().getTime();
+      dadosFoto.name = `foto_${timestamp}.jpg`;
+    }
+    
+    console.log('✅ Dados da foto validados:');
+    console.log('   - Nome:', dadosFoto.name);
+    console.log('   - Tipo:', dadosFoto.type);
+    console.log('   - Tamanho dos dados:', dadosFoto.data.length, 'caracteres');
+    
+    // Limpar dados base64 (remover prefixo se existir)
+    let dadosLimpos = dadosFoto.data;
+    if (dadosLimpos.includes('base64,')) {
+      dadosLimpos = dadosLimpos.split('base64,')[1];
+      console.log('🧹 Prefixo base64 removido');
+    }
+    
     // Converter base64 para blob
-    const dadosLimpos = dadosFoto.data.replace(/^data:image\/[a-z]+;base64,/, '');
+    console.log('🔄 Convertendo base64 para blob...');
     const blob = Utilities.newBlob(
       Utilities.base64Decode(dadosLimpos),
       dadosFoto.type,
       dadosFoto.name
     );
     
+    console.log('✅ Blob criado, tamanho:', blob.getBytes().length, 'bytes');
+    
     // Pasta de destino
+    console.log('📁 Acessando pasta do Drive...');
     const pasta = DriveApp.getFolderById(PASTA_DRIVE_ID);
+    console.log('✅ Pasta acessada:', pasta.getName());
     
     // Nome único para o arquivo
     const timestamp = new Date().getTime();
     const extensao = dadosFoto.name.split('.').pop() || 'jpg';
     const nomeArquivo = `roupa_${timestamp}.${extensao}`;
     
+    console.log('💾 Criando arquivo:', nomeArquivo);
+    
     // Criar arquivo
     const arquivo = pasta.createFile(blob.setName(nomeArquivo));
+    console.log('✅ Arquivo criado com ID:', arquivo.getId());
     
     // Tornar público
+    console.log('🌐 Tornando arquivo público...');
     arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
     // Retornar URL
     const url = `https://drive.google.com/file/d/${arquivo.getId()}/view`;
+    console.log('✅ Upload concluído, URL:', url);
+    
     return url;
     
   } catch (error) {
     console.log('❌ Erro no upload:', error.message);
+    console.log('🔍 Dados recebidos:', JSON.stringify(dadosFoto, null, 2));
     throw new Error('Falha no upload da foto: ' + error.message);
   }
 }
@@ -307,22 +397,45 @@ function inserirNaPlanilha(dados, urlFoto) {
 }
 
 /**
- * FUNÇÃO 6: Criar resposta com CORS
+ * FUNÇÃO 6: Criar resposta com CORS (Compatível com Legacy)
  */
 function criarResposta(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400'
-    });
+  try {
+    const response = ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+    // No modo legacy, não usamos setHeaders(), o CORS é configurado na publicação
+    console.log('✅ Resposta criada:', response);
+    return response;
+    
+  } catch (error) {
+    console.log('❌ Erro ao criar resposta:', error.message);
+    
+    // Fallback básico se houver problema
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: 'Erro interno: ' + error.message
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 /**
- * FUNÇÃO 7: doGet - Página de status
+ * FUNÇÃO 7: doOptions - Lidar com requisições CORS preflight
+ */
+function doOptions(e) {
+  console.log('🔄 Requisição OPTIONS recebida (CORS preflight)');
+  
+  // No modo legacy, retornamos uma resposta simples
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+/**
+ * FUNÇÃO 8: doGet - Página de status
  */
 function doGet() {
   const html = `
@@ -414,4 +527,65 @@ function doGet() {
   `;
   
   return HtmlService.createHtmlOutput(html);
+}
+
+/**
+ * FUNÇÃO 9: Testar upload de foto isoladamente
+ */
+function testarUploadFoto() {
+  console.log('🧪 Testando upload de foto...');
+  
+  // Imagem 1x1 pixel transparente em base64 (PNG)
+  const fotoTeste = {
+    name: 'teste_upload.png',
+    type: 'image/png',
+    data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+  };
+  
+  try {
+    console.log('📋 Dados da foto teste:', fotoTeste);
+    const url = uploadFotoBasico(fotoTeste);
+    console.log('✅ Teste de upload bem-sucedido!');
+    console.log('🔗 URL da foto:', url);
+    return url;
+  } catch (error) {
+    console.log('❌ Teste de upload falhou:', error.message);
+    return false;
+  }
+}
+
+/**
+ * FUNÇÃO 10: Testar doPost localmente
+ */
+function testarDoPost() {
+  console.log('🧪 Testando função doPost...');
+  
+  // Simular dados do frontend
+  const dadosSimulados = {
+    postData: {
+      contents: JSON.stringify({
+        nome: 'Camiseta Teste',
+        categoria: 'Camisetas',
+        estampa: 'Floral',
+        tamanho: 'M',
+        quantidade: 3,
+        foto: {
+          name: 'teste.jpg',
+          type: 'image/jpeg',
+          data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        },
+        timestamp: new Date().toISOString()
+      })
+    }
+  };
+  
+  try {
+    const resultado = doPost(dadosSimulados);
+    console.log('✅ Teste doPost concluído');
+    console.log('📤 Resposta:', resultado.getContent());
+    return true;
+  } catch (error) {
+    console.log('❌ Erro no teste doPost:', error.message);
+    return false;
+  }
 } 
